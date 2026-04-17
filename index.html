@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4a90e2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Counter">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Counter</title>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+    html, body { height: 100%; }
+    body {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    #count {
+      font-size: 120px; font-weight: 700;
+      color: #222; margin: 20px 0 40px;
+      min-width: 200px; text-align: center;
+    }
+    .buttons { display: flex; gap: 40px; }
+    button {
+      width: 110px; height: 110px; font-size: 56px;
+      border: none; border-radius: 50%;
+      background: #4a90e2; color: white; cursor: pointer;
+      box-shadow: 0 6px 14px rgba(74,144,226,0.4);
+      transition: transform 0.08s, background 0.15s;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0; line-height: 1;
+    }
+    button:active { transform: scale(0.92); background: #357abd; }
+    #reset {
+      margin-top: 40px; background: transparent; color: #888;
+      border: 1px solid #ccc; width: auto; height: auto;
+      padding: 8px 20px; font-size: 14px; border-radius: 20px;
+      box-shadow: none;
+    }
+    #reset:active { background: #eee; }
+  </style>
+</head>
+<body>
+  <div id="count">0</div>
+  <div class="buttons">
+    <button onclick="update(-1)" aria-label="minus">−</button>
+    <button onclick="update(1)" aria-label="plus">+</button>
+  </div>
+  <button id="reset" onclick="resetCount()">초기화</button>
+
+  <script>
+    let count = Number(localStorage.getItem('count') || 0);
+    const el = document.getElementById('count');
+    el.textContent = count;
+
+    function update(delta) {
+      count += delta;
+      el.textContent = count;
+      localStorage.setItem('count', count);
+      if (navigator.vibrate) navigator.vibrate(10);
+    }
+    function resetCount() {
+      if (confirm('0으로 초기화할까요?')) {
+        count = 0;
+        el.textContent = count;
+        localStorage.setItem('count', count);
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(console.error);
+      });
+    }
+  </script>
+</body>
+</html>
