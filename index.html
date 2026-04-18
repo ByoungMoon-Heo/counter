@@ -2,81 +2,167 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#4a90e2">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Counter">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <title>Counter</title>
   <style>
-    * { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-    html, body { height: 100%; }
-    body {
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f5f5;
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
+    * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; }
+    body { 
+      display:flex; flex-direction:column; 
+      align-items:center; justify-content:center;
+      height:100vh; margin:0; font-family: -apple-system, sans-serif;
+      background:#f5f5f5;
     }
-    #count {
-      font-size: 120px; font-weight: 700;
-      color: #222; margin: 20px 0 40px;
-      min-width: 200px; text-align: center;
+    
+    /* 언어 선택 */
+    .top-bar {
+      position: absolute; top: 30px;
     }
+    #lang {
+      font-size: 16px; padding: 8px 16px;
+      border: 2px solid #4a90e2; border-radius: 20px;
+      background: white; color: #4a90e2; font-weight: bold;
+      cursor: pointer;
+    }
+    
+    /* 카운트 숫자 */
+    #count { 
+      font-size: 120px; margin: 20px; font-weight: bold; 
+      color: #333; line-height: 1;
+    }
+    
+    /* +/- 버튼 */
     .buttons { display: flex; gap: 40px; }
-    button {
-      width: 110px; height: 110px; font-size: 56px;
+    button.main { 
+      width: 100px; height: 100px; font-size: 48px;
       border: none; border-radius: 50%;
       background: #4a90e2; color: white; cursor: pointer;
-      box-shadow: 0 6px 14px rgba(74,144,226,0.4);
-      transition: transform 0.08s, background 0.15s;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0; line-height: 1;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: transform 0.1s;
     }
-    button:active { transform: scale(0.92); background: #357abd; }
-    #reset {
-      margin-top: 40px; background: transparent; color: #888;
-      border: 1px solid #ccc; width: auto; height: auto;
-      padding: 8px 20px; font-size: 14px; border-radius: 20px;
-      box-shadow: none;
+    button.main:active { transform: scale(0.92); background: #357abd; }
+    
+    /* 하단 컨트롤 */
+    .bottom-bar {
+      position: absolute; bottom: 40px;
+      display: flex; gap: 15px; align-items: center;
     }
-    #reset:active { background: #eee; }
+    .toggle {
+      font-size: 14px; padding: 8px 14px;
+      border: 2px solid #ccc; border-radius: 20px;
+      background: white; cursor: pointer; color: #666;
+    }
+    .toggle.on { border-color: #4a90e2; color: #4a90e2; }
+    .reset {
+      font-size: 14px; padding: 8px 14px;
+      border: 2px solid #e74c3c; border-radius: 20px;
+      background: white; cursor: pointer; color: #e74c3c;
+    }
   </style>
 </head>
 <body>
-  <div id="count">0</div>
-  <div class="buttons">
-    <button onclick="update(-1)" aria-label="minus">−</button>
-    <button onclick="update(1)" aria-label="plus">+</button>
+
+  <div class="top-bar">
+    <select id="lang">
+      <option value="ko-KR">🇰🇷 한국어</option>
+      <option value="en-US">🇺🇸 English</option>
+      <option value="zh-CN">🇨🇳 中文</option>
+      <option value="ja-JP">🇯🇵 日本語</option>
+    </select>
   </div>
-  <button id="reset" onclick="resetCount()">초기화</button>
+
+  <div id="count">0</div>
+
+  <div class="buttons">
+    <button class="main" onclick="update(-1)">−</button>
+    <button class="main" onclick="update(+1)">+</button>
+  </div>
+
+  <div class="bottom-bar">
+    <button id="soundBtn" class="toggle on" onclick="toggleSound()">🔊 소리 ON</button>
+    <button class="reset" onclick="reset()">🔄 초기화</button>
+  </div>
 
   <script>
+    // ===== 상태 =====
     let count = Number(localStorage.getItem('count') || 0);
-    const el = document.getElementById('count');
-    el.textContent = count;
+    let soundOn = localStorage.getItem('soundOn') !== 'false';
+    let lang = localStorage.getItem('lang') || 'ko-KR';
 
+    const el = document.getElementById('count');
+    const langSel = document.getElementById('lang');
+    const soundBtn = document.getElementById('soundBtn');
+
+    // ===== 초기 UI =====
+    el.textContent = count;
+    langSel.value = lang;
+    updateSoundUI();
+
+    // ===== 언어별 버튼 라벨 =====
+    const labels = {
+      'ko-KR': { on: '🔊 소리 ON', off: '🔇 소리 OFF', reset: '🔄 초기화' },
+      'en-US': { on: '🔊 Sound ON', off: '🔇 Sound OFF', reset: '🔄 Reset' },
+      'zh-CN': { on: '🔊 声音 开', off: '🔇 声音 关', reset: '🔄 重置' },
+      'ja-JP': { on: '🔊 音 ON', off: '🔇 音 OFF', reset: '🔄 リセット' },
+    };
+
+    function updateSoundUI() {
+      const l = labels[lang];
+      soundBtn.textContent = soundOn ? l.on : l.off;
+      soundBtn.classList.toggle('on', soundOn);
+      document.querySelector('.reset').textContent = l.reset;
+    }
+
+    // ===== 음성 =====
+    function speak(num) {
+      if (!soundOn) return;
+      if (!('speechSynthesis' in window)) return;
+      
+      speechSynthesis.cancel();  // 연타 방지
+      
+      const utter = new SpeechSynthesisUtterance(String(num));
+      utter.lang = lang;
+      utter.rate = 1.1;
+      utter.volume = 1;
+      speechSynthesis.speak(utter);
+    }
+
+    // ===== 동작 =====
     function update(delta) {
       count += delta;
       el.textContent = count;
       localStorage.setItem('count', count);
-      if (navigator.vibrate) navigator.vibrate(10);
-    }
-    function resetCount() {
-      if (confirm('0으로 초기화할까요?')) {
-        count = 0;
-        el.textContent = count;
-        localStorage.setItem('count', count);
-      }
+      if (navigator.vibrate) navigator.vibrate(20);
+      speak(count);
     }
 
+    function toggleSound() {
+      soundOn = !soundOn;
+      localStorage.setItem('soundOn', soundOn);
+      updateSoundUI();
+      if (soundOn) speak(count);  // 켤 때 현재 숫자 읽기
+    }
+
+    function reset() {
+      count = 0;
+      el.textContent = count;
+      localStorage.setItem('count', count);
+      speak(count);
+    }
+
+    // ===== 언어 변경 =====
+    langSel.addEventListener('change', (e) => {
+      lang = e.target.value;
+      localStorage.setItem('lang', lang);
+      updateSoundUI();
+      speak(count);  // 새 언어로 현재 숫자 읽기 (미리듣기)
+    });
+
+    // ===== 서비스 워커 =====
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(console.error);
-      });
+      navigator.serviceWorker.register('sw.js');
     }
   </script>
 </body>
