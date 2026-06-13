@@ -1,4 +1,4 @@
-const CACHE = 'counter-v1';
+const CACHE = 'counter-v2';
 const FILES = [
   './',
   './index.html',
