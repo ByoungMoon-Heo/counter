@@ -181,7 +181,8 @@
         console.warn(`음성 없음: ${lang}`);
       }
       
-      utter.rate = 1.1;
+      // utter.rate = 1.1; 
+      utter.rate = 0.7;
       utter.volume = 1;
       speechSynthesis.speak(utter);
     }
@@ -210,7 +211,7 @@
     }
 
     // ===== 이벤트 바인딩 (addEventListener 방식으로 변경) =====
-    soundBtn.addEventListener('click', toggleSound);
+    // soundBtn.addEventListener('click', toggleSound);
     resetBtn.addEventListener('click', reset);
 
     langSel.addEventListener('change', (e) => {
